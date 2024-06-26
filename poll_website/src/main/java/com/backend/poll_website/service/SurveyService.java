@@ -6,11 +6,13 @@ import com.backend.poll_website.model.ResultsResponse;
 import com.backend.poll_website.model.SurveyResponse;
 import com.backend.poll_website.repository.SurveyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SurveyService {
@@ -45,5 +47,17 @@ public class SurveyService {
         surveyResponse.setQuestion(survey.getQuestion());
         surveyResponse.setAnswers(survey.getAnswers());
         return surveyResponse;
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void removeExpiredSurveys() {
+        List<Survey> surveys = surveyRepository.findAll();
+        List<Survey> expiredSurveys = surveys.stream()
+                .filter(survey -> survey.getDeletionTime().isBefore(LocalDateTime.now()))
+                .collect(Collectors.toList());
+
+        if (!expiredSurveys.isEmpty()) {
+            surveyRepository.deleteAll(expiredSurveys);
+        }
     }
 }
